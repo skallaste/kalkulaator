@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hinnakalkulaator</title>
+
+    <!-- html2pdf raamatukogu PDF-i genereerimiseks -->
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"
+        integrity="sha512-YcsIPGdhPK4P/uRW6/sruonlYj+Q7UHWeKfTAkBW+g83NKM+jMJFJ4iAPfSnVp7BKD4dKMHmVSvICUbE/V1sSw=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f4;
+            color: #1c1917;
+            margin: 0;
+            padding: 24px 16px;
+            line-height: 1.5;
+        }
+
+        #hinnakalk {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+            overflow-x: auto;
+        }
+
+        #hinnakalk h1 {
+            margin: 0 0 8px 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1c1917;
+        }
+
+        #hinnakalk .alapealkiri {
+            color: #78716c;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        #hinnakalk table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        #hinnakalk td {
+            padding: 6px 4px;
+            vertical-align: middle;
+        }
+
+        #hinnakalk tr:nth-child(even) td {
+            background: #fafaf9;
+        }
+
+        #hinnakalk thead td,
+        #hinnakalk tr:first-child td {
+            font-weight: 600;
+            color: #44403c;
+            background: #f5f5f4;
+            text-align: center;
+            border-bottom: 1px solid #e7e5e4;
+            padding: 10px 4px;
+        }
+
+        #hinnakalk td:first-child {
+            text-align: left !important;
+            padding-right: 12px;
+            min-width: 220px;
+        }
+
+        #hinnakalk a[title] {
+            color: #1c1917;
+            text-decoration: none;
+            border-bottom: 1px dotted #a8a29e;
+        }
+
+        #hinnakalk a[title]:hover {
+            border-bottom-color: #1c1917;
+        }
+
+        #hinnakalk input[type="text"],
+        #hinnakalk input:not([type]) {
+            width: 100%;
+            min-width: 70px;
+            padding: 6px 8px;
+            border: 1px solid #d6d3d1;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            background: #ffffff;
+            text-align: right;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        #hinnakalk input:focus {
+            outline: none;
+            border-color: #57534e;
+            box-shadow: 0 0 0 3px rgba(87, 83, 78, 0.1);
+        }
+
+        /* Eraldi rida arvutusnuppude ja summade jaoks */
+        #hinnakalk tr.tulemuste-rida td {
+            border-top: 1px solid #e7e5e4;
+            padding-top: 14px;
+        }
+
+        #hinnakalk input[type="submit"] {
+            background: #1c1917;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            margin-right: 4px;
+            transition: background 0.15s;
+            text-align: center;
+        }
+
+        #hinnakalk input[type="submit"]:hover {
+            background: #44403c;
+        }
+
+        #hinnakalk input[type="submit"][value="pdf"] {
+            background: #ffffff;
+            color: #1c1917;
+            border: 1px solid #d6d3d1;
+        }
+
+        #hinnakalk input[type="submit"][value="pdf"]:hover {
+            background: #f5f5f4;
+        }
+
+        #hinnakalk .summa-rida td {
+            font-weight: 600;
+            background: #fafaf9 !important;
+        }
+
+        #hinnakalk #kogusumma {
+            font-weight: 700;
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+
+        #hinnakalk .markus {
+            text-align: right;
+            font-size: 0.85rem;
+            color: #57534e;
+            padding-top: 12px !important;
+            background: #ffffff !important;
+        }
+
+        #hinnakalk .markus a {
+            color: #1c1917;
+            font-weight: 500;
+        }
+
+        /* Mobiilne väiksema ekraani jaoks */
+        @media (max-width: 768px) {
+            body { padding: 12px 8px; }
+            #hinnakalk { padding: 16px; }
+            #hinnakalk { font-size: 0.85rem; }
+            #hinnakalk td:first-child { min-width: 160px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="hinnakalk">
+    <h1>Hinnakalkulaator</h1>
+    <p class="alapealkiri">Sisesta detailide mõõdud ja vajuta "Arvuta".</p>
+
+    <table cellspacing="0" cellpadding="0">
+        <tr>
+            <td>&nbsp;</td>
+            <td>Detail #1</td>
+            <td>Detail #2</td>
+            <td>Detail #3</td>
+            <td>Detail #4</td>
+            <td>Detail #5</td>
+        </tr>
+        <tr>
+            <td><a style="cursor:pointer" title="Tasapindade detaili paksus 20-200mm, taustadel 10mm">Paksus (mm)</a>:</td>
+            <td><input id="paksus1" value="0"></td>
+            <td><input id="paksus2" value="0"></td>
+            <td><input id="paksus3" value="0"></td>
+            <td><input id="paksus4" value="0"></td>
+            <td><input id="paksus5" value="0"></td>
+        </tr>
+        <tr>
+            <td><a style="cursor:pointer" title="Standardne detaili maksimaalne pikkus 2780mm. Pikema puhul saatke päring kodulehelt või emailiga">Pikkus (mm)</a>:</td>
+            <td><input id="pikkus1" value="0"></td>
+            <td><input id="pikkus2" value="0"></td>
+            <td><input id="pikkus3" value="0"></td>
+            <td><input id="pikkus4" value="0"></td>
+            <td><input id="pikkus5" value="0"></td>
+        </tr>
+        <tr>
+            <td><a style="cursor:pointer" title="Maksimaalne detaili laius 1200mm. Laiema puhul saatke päring emailiga või kodulehelt">Laius (mm)</a>:</td>
+            <td><input id="laius1" value="0"></td>
+            <td><input id="laius2" value="0"></td>
+            <td><input id="laius3" value="0"></td>
+            <td><input id="laius4" value="0"></td>
+            <td><input id="laius5" value="0"></td>
+        </tr>
+        <tr>
+            <td><a style="cursor:pointer" title="Näiteks segisti, pistiku, seebidosaatori ava jne.">Puuritud ava (tk)</a>:</td>
+            <td><input id="puuritud_ava1" value="0"></td>
+            <td><input id="puuritud_ava2" value="0"></td>
+            <td><input id="puuritud_ava3" value="0"></td>
+            <td><input id="puuritud_ava4" value="0"></td>
+            <td><input id="puuritud_ava5" value="0"></td>
+        </tr>
+        <tr>
+            <td><a style="cursor:pointer" title="Näiteks pealt kinnitatava pliidi ja valamu ava, seina püstakute väljalõige jne.">Väljalõige (lõikejoon mm)</a>:</td>
+            <td><input id="lõigatud_ava1" value="0"></td>
+            <td><input id="lõigatud_ava2" value="0"></td>
+            <td><input id="lõigatud_ava3" value="0"></td>
+            <td><input id="lõigatud_ava4" value="0"></td>
+            <td><input id="lõigatud_ava5" value="0"></td>
+        </tr>
+        <tr>
+            <td><a style="cursor:pointer" title="Peale paigaldust näha jäävad servad">Töödeldud servad (servade pikkus mm)</a>:</td>
+            <td><input id="nähtav_serv1" value="0"></td>
+            <td><input id="nähtav_serv2" value="0"></td>
+            <td><input id="nähtav_serv3" value="0"></td>
+            <td><input id="nähtav_serv4" value="0"></td>
+            <td><input id="nähtav_serv5" value="0"></td>
+        </tr>
+        <tr>
+            <td><a style="cursor:pointer" title="Integreeritud betoonvalamu, tutvu valamute valikuga valamute lehel">Integreeritud betoonvalamu (tk)</a>:</td>
+            <td><input id="valamu1" value="0"></td>
+            <td><input id="valamu2" value="0"></td>
+            <td><input id="valamu3" value="0"></td>
+            <td><input id="valamu4" value="0"></td>
+            <td><input id="valamu5" value="0"></td>
+        </tr>
+        <tr>
+            <td><a style="cursor:pointer" title="Näiteks ava alt kinnitatavale valamule.">Töödeldud servadega avad valamule jne. (tk)</a>:</td>
+            <td><input id="valamu_valamine1" value="0"></td>
+            <td><input id="valamu_valamine2" value="0"></td>
+            <td><input id="valamu_valamine3" value="0"></td>
+            <td><input id="valamu_valamine4" value="0"></td>
+            <td><input id="valamu_valamine5" value="0"></td>
+        </tr>
+        <tr>
+            <td><a style="cursor:pointer" title="Näiteks ava kiviga tasa paigaldatavale valamule ja pliidiplaadile jne.">Ava kivi pinnaga tasa paigaldatavale pliidiplaadile ja valamule (tk)</a>:</td>
+            <td><input id="süvistatud1" value="0"></td>
+            <td><input id="süvistatud2" value="0"></td>
+            <td><input id="süvistatud3" value="0"></td>
+            <td><input id="süvistatud4" value="0"></td>
+            <td><input id="süvistatud5" value="0"></td>
+        </tr>
+        <tr class="tulemuste-rida summa-rida">
+            <td>
+                <input type="submit" value="Arvuta" onclick="calc();">
+                <input type="submit" value="pdf" onclick="pdf();">
+            </td>
+            <td><input id="summa1" value="0"></td>
+            <td><input id="summa2" value="0"></td>
+            <td><input id="summa3" value="0"></td>
+            <td><input id="summa4" value="0"></td>
+            <td><input id="summa5" value="0"></td>
+        </tr>
+        <tr>
+            <td colspan="5" style="text-align:right; font-weight:600;">Hind kokku (EUR) *</td>
+            <td><input id="kogusumma" value="0"></td>
+        </tr>
+        <tr>
+            <td colspan="6" class="markus">
+                <b>* hind ei sisalda käibemaksu, transporti ja paigaldust</b><br>
+                <a href="http://www.ior-concrete.com/kontaktid/">Saada meile päring</a>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<script>
+    // Hinnakirja konstandid
+    var mathind             = 3600;
+    var tööraha_35          = 240;
+    var tööraha_35_200      = 360;
+    var tööraha_200         = 480;
+    var avade_puurimine     = 20;
+    var avade_lõikamine     = 0.03;
+    var servade_töötlemine  = 0.02;
+    var int_valamu          = 525;
+    var alt_valamu          = 269;
+    var süvistatud_pliit    = 175;
+
+    // Abifunktsioon: võtab elemendi väärtuse numbrina, vigaste väärtuste asemel 0
+    function num(id) {
+        var el = document.getElementById(id);
+        var v = parseFloat(el.value);
+        if (isNaN(v)) {
+            el.value = 0;
+            return 0;
+        }
+        return v;
+    }
+
+    // Arvutab ühe detaili summa antud indeksiga (1..5)
+    function arvutaDetail(i) {
+        var paksus         = num("paksus" + i);
+        var pikkus         = num("pikkus" + i);
+        var laius          = num("laius" + i);
+        var puuritud       = num("puuritud_ava" + i);
+        var lõigatud       = num("lõigatud_ava" + i);
+        var nähtav_serv    = num("nähtav_serv" + i);
+        var valamu         = num("valamu" + i);
+        var valamu_valamine= num("valamu_valamine" + i);
+        var süvistatud     = num("süvistatud" + i);
+
+        // Materjali kulu (m³ * mathind)
+        var materjal = pikkus * paksus * laius / 1000000000 * mathind;
+
+        // Tööraha — pinna ruutmeetrid
+        var pinnaruut = pikkus * laius / 1000000;
+
+        // Valutöö hind sõltub paksusest
+        var valutöö;
+        if (paksus < 36) {
+            valutöö = tööraha_35 * pinnaruut;
+        } else if (paksus >= 200) {
+            valutöö = tööraha_200 * pinnaruut;
+        } else {
+            valutöö = tööraha_35_200 * pinnaruut;
+        }
+
+        var puuritud_ava       = puuritud * avade_puurimine;
+        var lõigatud_ava       = lõigatud * avade_lõikamine;
+        var töödeldud_servad   = nähtav_serv * servade_töötlemine;
+        var integ_valamu       = valamu * int_valamu;
+        var alt_valamu_summa   = valamu_valamine * alt_valamu;
+        var süvistatud_summa   = süvistatud * süvistatud_pliit;
+
+        var summa = Math.round(
+            materjal + valutöö + puuritud_ava + lõigatud_ava +
+            töödeldud_servad + integ_valamu + alt_valamu_summa + süvistatud_summa
+        );
+
+        document.getElementById("summa" + i).value = summa;
+        return summa;
+    }
+
+    function calc() {
+        var kogusumma = 0;
+        for (var i = 1; i <= 5; i++) {
+            kogusumma += arvutaDetail(i);
+        }
+        document.getElementById("kogusumma").value = Math.round(kogusumma);
+    }
+
+    function pdf() {
+        var element = document.getElementById("hinnakalk");
+        var opt = {
+            margin: 20,
+            filename: "kalkulatsioon.pdf",
+            jsPDF: { orientation: "landscape" }
+        };
+        html2pdf(element, opt);
+    }
+</script>
+
+</body>
+</html>
